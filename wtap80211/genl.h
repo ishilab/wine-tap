@@ -1,0 +1,77 @@
+/*
+ * genl.h
+ * wtap80211 - Wireless network tap device for IEEE 802.11
+ *
+ * Copyright (c) 2016 - 2017, Arata Kato <arata.kato@outlook.com>
+ *
+ * This program is free software under GPLv2 License; you can redistribute it
+ * and/or modify it under the terms of the GNU General Public License version 2
+ * as published by the Free Software Foundation.
+ */
+
+#ifndef GENL_H
+#define GENL_H
+
+#include <linux/kernel.h>
+
+enum wtap_genl_cmds {
+    WTAP_GENL_CMD_UNSPEC = 0,
+    WTAP_GENL_CMD_CONFIG,
+    WTAP_GENL_CMD_AUTH,
+    WTAP_GENL_CMD_AUTH_ACK,
+    WTAP_GENL_CMD_TX_FRAME,
+    WTAP_GENL_CMD_RX_FRAME,
+    WTAP_GENL_CMD_LOOPBACK,
+    WTAP_GENL_CMD_SYNC_REQ,
+    WTAP_GENL_CMD_SYNC_RESP,
+    WTAP_GENL_CMD_GET_PROPERTY,
+    WTAP_GENL_CMD_SET_PROPERTY,
+    WTAP_GENL_CMD_UNSPEC_CONFIG,
+
+    __WTAP_GENL_CMD_MAX,
+};
+
+#define WTAP_GENL_CMD_MAX (__WTAP_GENL_CMD_MAX - 1)
+
+enum wtap_genl_attrs {
+    WTAP_GENL_ATTR_UNSPEC = 0,
+    WTAP_GENL_ATTR_AUTH_CHECKSUM,
+    WTAP_GENL_ATTR_DOT_ELEVEN_FRAME,
+    WTAP_GENL_ATTR_FCS,
+    WTAP_GENL_ATTR_TX_INFO,
+    WTAP_GENL_ATTR_RX_STATUS,
+    WTAP_GENL_ATTR_FREQUENCY,
+    WTAP_GENL_ATTR_CHANNEL,
+    WTAP_GENL_ATTR_FLAGS,
+
+    // WTAP_GENL_ATTR_BSS_INFO_CHANGED,
+    // WTAP_GENL_ATTR_BSS_INFO_CONF,
+    // WTAP_GENL_ATTR_CONFIG_FLAGS,
+    // WTAP_GENL_ATTR_CONFIG,
+
+    WTAP_GENL_ATTR_CONF_ADDR,
+    WTAP_GENL_ATTR_CONF_TYPE,
+    WTAP_GENL_ATTR_CONF_CHANGED,
+    WTAP_GENL_ATTR_CONF_PARAM,
+
+    WTAP_GENL_ATTR_ADDRLIST,
+
+    __WTAP_GENL_ATTR_MAX
+};
+
+#define WTAP_GENL_ATTR_MAX (__WTAP_GENL_ATTR_MAX - 1)
+
+#define WTAP_MGMT_MSG_TYPE_BSS_INFO   BIT(0)
+#define WTAP_MGMT_MSG_TYPE_RX_FILTER  BIT(1)
+#define WTAP_MGMT_MSG_TYPE_TX_QUEUE   BIT(2)
+#define WTAP_MGMT_MSG_TYPE_HW_CONF    BIT(3)
+#define WTAP_MGMT_MSG_TYPE_TX_CONF    BIT(4)
+#define WTAP_MGMT_MSG_TYPE_HW_START   BIT(5)
+#define WTAP_MGMT_MSG_TYPE_HW_STOP    BIT(6)
+#define WTAP_MGMT_MSG_TYPE_VIF_ADD    BIT(7)
+#define WTAP_MGMT_MSG_TYPE_VIF_REMOVE BIT(8)
+#define WTAP_MGMT_MSG_TYPE_CHANNEL    BIT(9)
+
+#define WTAP_FRAME_MSG_FLAG_FCS BIT(0)
+
+#endif /* GENL_H */

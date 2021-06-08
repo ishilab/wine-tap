@@ -1,0 +1,231 @@
+#
+# makefile.common for WiNE-Tap
+# Author: Arata Kato <arata.kato@outlook.com>
+#
+
+build_option ?= default
+libevent_option ?= custom
+libnl_option ?= custom
+glibc_option ?= default
+
+# # ARCH = $(addprefix, -, $(shell dpkg --print-architecture))
+# ARCH = -$(shell dpkg --print-architecture)
+# ifeq "$(ARCH)" "-amd64"
+# 	ARCH=
+# endif
+ARCH = -$(shell uname -m)
+ifeq "$(ARCH)" "-x86_64"
+	ARCH=
+endif
+
+AR := ar
+AFLAGS := -r -c -s
+
+CC := gcc
+CXX := g++
+
+TOPDIR = .
+SCRIPT_DIR = ./scripts
+
+SRCDIR := $(TOPDIR)/src
+ifeq "$(strip $(SRCDIR))" ""
+	SRCDIR := .
+endif
+
+OBJDIR = $(SRCDIR)
+ifeq "$(strip $(OBJDIR))" ""
+	OBJDIR := .
+endif
+
+SOURCE_SUFFIX := .c
+OBJECT_SUFFIX := .o
+DEPEND_SUFFIX := .d
+STATIC_LIB_SUFFIX := .a
+DYNAMIC_LIB_SUFFIX := .so
+
+TESTDIR = $(TOPDIR)/test
+LIBDIR = $(TOPDIR)/lib
+EXTLIBDIR = $(TOPDIR)/extlib
+
+# libevent
+ifeq "$(libevent_option)" "default"
+    LIBEVENT_LIB = -levent -levent_pthreads
+    # Default header files are put on /usr/include
+    LIBEVENT_INCLUDE =
+endif
+ifeq "$(libevent_option)" "custom"
+    LIBEVENT_VERSION = 2.1.11$(ARCH)
+    LIBEVENT_DIR = $(EXTLIBDIR)/libevent-$(LIBEVENT_VERSION)
+    LIBEVENT_LIB = $(wildcard $(LIBEVENT_DIR)/lib/*.a)
+    LIBEVENT_INCLUDE = -I$(LIBEVENT_DIR)/include/
+endif
+
+# libnl
+ifeq "$(libnl_option)" "default"
+	LIBNL_LIB = -lnl-3 -lnl-genl-3 -lnl-route-3
+	LIBNL_INCLUDE = -I/usr/include/libnl3/
+endif
+ifeq "$(libnl_option)" "custom"
+	LIBNL_VERSION = 3.2.29$(ARCH)
+	LIBNL_DIR = $(EXTLIBDIR)/libnl-$(LIBNL_VERSION)
+	LIBNL_LIB = $(wildcard $(LIBNL_DIR)/lib/*.a)
+	LIBNL_INCLUDE = -I$(LIBNL_DIR)/include/libnl3/
+endif
+
+# glibc (for CentOS 7)
+ifeq "$(glibc_option)" "default"
+	GLIBC_VERSION = 2.23$(ARCH)
+	GLIBC_DIR = $(EXTLIBDIR)/glibc-$(GLIBC_VERSION)
+	GLIBC_LIB =
+
+	STROPTS_EXISTS = $(shell find /usr/include/ -maxdepth 1 -type f -name "*stropts.h")
+	ifeq "$(STROPTS_EXISTS)" "/usr/include/stropts.h"
+		GLIBC_INCLUDE =
+	else
+		GLIBC_INCLUDE = -I$(GLIBC_DIR)/include/
+	endif
+
+	STARTFILES =
+	ENDFILES =
+	LIBGROUP =
+	GLIBC_LDFLAGS =
+endif
+ifeq "$(glibc_option)" "custom"
+	GLIBC_VERSION = 2.23$(ARCH)
+	GLIBC_DIR = $(EXTLIBDIR)/glibc-$(GLIBC_VERSION)
+	GLIBC_LIB = $(GLIBC_DIR)/lib/libc.a $(GLIBC_DIR)/lib/libpthread.a
+	GLIBC_INCLUDE = -I$(GLIBC_DIR)/include/
+	STARTFILES = $(GLIBC_DIR)/lib/crt1.o $(GLIBC_DIR)/lib/crti.o "$(shell gcc --print-file-name=crtbegin.o)"
+	ENDFILES = "$(shell gcc --print-file-name=crtend.o)" $(GLIBC_DIR)/lib/crtn.o
+	LIBGROUP = -Wl,--start-group $(GLIBC_LIB) -lgcc -lgcc_eh -Wl,--end-group
+	GLIBC_LDFLAGS = -nostdlib -nostartfiles -static
+endif
+
+# libgc
+LIBGC_VERSION = 7.4.18$(ARCH)
+LIBGC_DIR = $(EXTLIBDIR)/libgc-$(LIBGC_VERSION)
+LIBGC_LIB = $(wildcard $(LIBGC_DIR)/lib/*.a)
+LIBGC_INCLUDE = -I$(LIBGC_DIR)/include
+
+# libcsptr
+LIBCSPTR_VERSION = 2.0.4$(ARCH)
+LIBCSPTR_DIR = $(EXTLIBDIR)/libcsptr-$(LIBCSPTR_VERSION)
+LIBCSPTR_LIB = $(wildcard $(LIBCSPTR_DIR)/lib/*.a)
+LIBCSPTR_INCLUDE = -I$(LIBCSPTR_DIR)/include
+
+# libcrc
+LIBCRC_VERSION = 2.0$(ARCH)
+LIBCRC_DIR = $(EXTLIBDIR)/libcrc-$(LIBCRC_VERSION)
+LIBCRC_LIB = $(wildcard $(LIBCRC_DIR)/lib/*.a)
+LIBCRC_INCLUDE = -I$(LIBCRC_DIR)/include
+
+# libnetlink (iproute2 libraries)
+LIBNETLINK_VERSION = 4.3.0$(ARCH)
+LIBNETLINK_DIR = $(EXTLIBDIR)/iproute2-$(LIBNETLINK_VERSION)
+LIBNETLINK_LIB = $(wildcard $(LIBNETLINK_DIR)/lib/*.a)
+LIBNETLINK_INCLUDE = -I$(LIBNETLINK_DIR)/include
+
+# libunwind
+LIBUNWIND_VERSION = 1.3.1$(ARCH)
+LIBUNWIND_DIR = $(EXTLIBDIR)/libunwind-$(LIBUNWIND_VERSION)
+LIBUNWIND_LIB = $(wildcard $(LIBUNWIND_DIR)/lib/*.a)
+LIBUNWIND_INCLUDE = -I$(LIBUNWIND_DIR)/include
+
+
+# CFLAGS
+INCLUDE = \
+    $(GLIBC_INCLUDE) \
+    $(LIBEVENT_INCLUDE) \
+    $(LIBNL_INCLUDE) \
+	$(LIBGC_INCLUDE) \
+	$(LIBCSPTR_INCLUDE) \
+	$(LIBCRC_INCLUDE) \
+	$(LIBNETLINK_INCLUDE) \
+	$(LIBUNWIND_INCLUDE) \
+    -I$(SRCDIR)/include \
+    -I$(SRCDIR)/common \
+	-I$(EXTLIBDIR)
+
+CFLAGS_COMMON := -std=gnu99 -MMD -MP \
+	-fPIC -fstack-protector-all \
+	-pthread \
+	-Wall -Wextra -Winit-self \
+	-Wno-unused-function -Wno-unused-parameter -Wno-unused-variable
+
+CXXFLAGS_COMMON := -std=c++14 \
+	-fPIC -fstack-protector-all \
+	-pthread \
+	-Wall -Wextra -Winit-self \
+	-Wno-unused-function -Wno-unused-parameter -Wno-unused-variable
+
+
+# Build option
+ifeq "$(build_option)" "default"
+	CFLAGS = $(CFLAGS_COMMON) -O3 -g3
+	CXXFLAGS = $(CXXFLAGS_COMMON) -O3 -g3
+endif
+ifeq "$(build_option)" "debug"
+	CFLAGS = $(CFLAGS_COMMON) \
+		-Wno-missing-field-initializers \
+		-g3 -ggdb -O0 -pg -rdynamic -fstack-usage -DENABLE_DEBUG
+
+	CXXFLAGS = $(CXXFLAGS_COMMON) \
+		-Wformat=2 -Wcast-qual -Wwrite-strings \
+		-g3 -ggdb -O0 -pg -rdynamic -fstack-usage -DENABLE_DEBUG
+endif
+ifeq "$(build_option)" "debug-strict"
+	CFLAGS = $(CFLAGS_COMMON) \
+		-Wno-missing-field-initializers \
+		-g3 -ggdb -O0 -pg -rdynamic -fstack-usage -DENABLE_DEBUG
+
+	CXXFLAGS = $(CXXFLAGS_COMMON) \
+		-Wformat=2 -Wcast-qual -Wwrite-strings \
+		-Wconversion -Wfloat-equal -Wpointer-arith \
+		-Weffc++ -Wredundant-decls \
+		-g3 -ggdb -O0 -pg -rdynamic -fstack-usage -DENABLE_DEBUG
+endif
+
+LDFLAGS_COMMON := \
+	$(LIBUNWIND_LIB) \
+    $(LIBGC_LIB) \
+    $(LIBCSPTR_LIB) \
+    $(LIBEVENT_LIB) \
+	$(LIBNETLINK_LIB) \
+    $(LIBNL_LIB) \
+    $(LIBCRC_LIB) \
+    -lpthread -ludev -lconfig -luuid -llzma -lrt -lm -ldl
+    # -ltcmalloc_minimal
+
+ifeq "$(shell getconf LONG_BIT)" "64"
+	LDFLAGS = $(LDFLAGS_COMMON) $(GLIBC_LDFLAGS)
+else
+	LDFLAGS = $(LDFLAGS_COMMON) $(GLIBC_LDFLAGS)
+endif
+
+$(OBJDIR)/%.o: $(SRCDIR)/%.c
+	$(CC) $(CFLAGS) $(INCLUDE) -o $@ -c $<
+
+# get_target_static
+define get_target_static
+	$(LIBDIR)/$(1)$(STATIC_LIB_SUFFIX)
+
+endef
+
+# get_source_files(target)
+define get_source_files
+	$(filter $(SRCDIR)/$(1)%$(SOURCE_SUFFIX), $(wildcard $(SRCDIR)/*$(SOURCE_SUFFIX)))
+
+endef
+
+# get_object_files(sources)
+define get_object_files
+	$(addprefix $(OBJDIR)/, $(notdir $($(1):$(SOURCE_SUFFIX)=$(OBJECT_SUFFIX))))
+
+endef
+
+# get_depend_files(sources)
+define get_depend_files
+	$(addprefix $(OBJDIR)/, $(notdir $($(1):$(SOURCE_SUFFIX)=$(DEPEND_SUFFIX))))
+
+endef
+

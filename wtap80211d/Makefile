@@ -1,0 +1,356 @@
+#
+# Makefile for WiNE-Tap (Wireless Network Emulator based on wtap80211)
+# Author: Arata Kato <arata.kato@outlook.com>
+#
+
+include makefile.common
+
+COMMON_SOURCES := \
+	$(SRCDIR)/common/message.c \
+	$(SRCDIR)/common/ip.c
+
+LIBS := \
+	$(LIBDIR)/libwinetap.a \
+	$(LIBDIR)/libtcpserv.a \
+	$(LIBDIR)/libudpserv.a \
+	$(LIBDIR)/libunserv.a \
+	$(LIBDIR)/libtuntap.a \
+	$(LIBDIR)/libudevmon.a \
+	$(LIBDIR)/libshm.a \
+	$(LIBDIR)/libworkqueue.a \
+	$(LIBDIR)/libutils.a
+
+# libmemcpy dependencies
+# 	Wrapped memcpy function with argument check
+# 	(it is only used in Linux 3.19 or earlier).
+#
+LIBMEMCPY_TARGET_STATIC = $(LIBDIR)/libmemcpy.a
+LIBMEMCPY_TARGET_DYNAMIC = $(LIBDIR)/libmemcpy.so
+LIBMEMCPY = $(LIBMEMCPY_TARGET_DYNAMIC)
+LIBMEMCPY_SOURCES = $(filter $(SRCDIR)/libmemcpy%$(SOURCE_SUFFIX), $(wildcard $(SRCDIR)/*$(SOURCE_SUFFIX)))
+LIBMEMCPY_OBJECTS = $(addprefix $(OBJDIR)/, $(notdir $(LIBMEMCPY_SOURCES:$(SOURCE_SUFFIX)=$(OBJECT_SUFFIX))))
+LIBMEMCPY_DEPENDS = $(LIBMEMCPY_OBJECTS:$(OBJECT_SUFFIX)=$(DEPEND_SUFFIX))
+
+#
+# libutils
+# Common utilities with compatibility among different architectures.
+#
+LIBUTILS_TARGET_STATIC = $(LIBDIR)/libutils.a
+LIBUTILS = $(LIBUTILS_TARGET_STATIC)
+LIBUTILS_SOURCES = $(filter $(SRCDIR)/libutils%.c, $(wildcard $(SRCDIR)/*.c))
+LIBUTILS_OBJECTS = $(addprefix $(OBJDIR)/, $(notdir $(LIBUTILS_SOURCES:.c=.o)))
+LIBUTILS_DEPENDS = $(LIBUTILS_OBJECTS:.o=.d)
+
+TEST_LIBUTILS_TARGET = $(TESTDIR)/test_libutils
+TEST_LIBUTILS_SOURCES = $(filter $(SRCDIR)/test_libutils%.c, $(wildcard $(SRCDIR)/*.c)) $(COMMON_SOURCES)
+TEST_LIBUTILS_OBJECTS = $(TEST_LIBUTILS_SOURCES:.c=.o)
+TEST_LIBUTILS_DEPENDS = $(TEST_LIBUTILS_OBJECTS:.o=.d)
+
+TEST_QUEUE_TARGET = $(TESTDIR)/test_queue
+TEST_QUEUE_SOURCES = $(filter $(SRCDIR)/test_queue%.c, $(wildcard $(SRCDIR)/*.c)) $(COMMON_SOURCES)
+TEST_QUEUE_OBJECTS = $(TEST_QUEUE_SOURCES:.c=.o)
+TEST_QUEUE_DEPENDS = $(TEST_QUEUE_OBJECTS:.o=.d)
+
+
+#
+# libworkqueue
+# 	Workqueue-based delay execution module
+#
+LIBWORKQUEUE_TARGET_STATIC = $(LIBDIR)/libworkqueue.a
+LIBWORKQUEUE_TARGET_DYNAMIC = $(LIBDIR)/libworkqueue.so
+LIBWORKQUEUE = $(LIBWORKQUEUE_TARGET_STATIC)
+LIBWORKQUEUE_SOURCES = $(filter $(SRCDIR)/libworkqueue%.c, $(wildcard $(SRCDIR)/*.c))
+LIBWORKQUEUE_OBJECTS = $(addprefix $(OBJDIR)/, $(notdir $(LIBWORKQUEUE_SOURCES:.c=.o)))
+LIBWORKQUEUE_DEPENDS = $(LIBWORKQUEUE_OBJECTS:.o=.d)
+
+TEST_LIBWORKQUEUE_TARGET = $(TESTDIR)/test_libworkqueue
+TEST_LIBWORKQUEUE_SOURCES = $(filter $(SRCDIR)/test_libworkqueue%.c, $(wildcard $(SRCDIR)/*.c))
+TEST_LIBWORKQUEUE_OBJECTS = $(addprefix $(OBJDIR)/, $(notdir $(TEST_LIBWORKQUEUE_SOURCES:.c=.o)))
+TEST_LIBWORKQUEUE_DEPENDS = $(TEST_LIBWORKQUEUE_OBJECTS:.o=.d)
+
+
+#
+# libshm
+# 	Shared memory-based fast logging module
+#
+LIBSHM_TARGET_STATIC = $(LIBDIR)/libshm.a
+LIBSHM = $(LIBSHM_TARGET_STATIC)
+LIBSHM_SOURCES = $(filter $(SRCDIR)/libshm%.c, $(wildcard $(SRCDIR)/*.c))
+LIBSHM_OBJECTS = $(addprefix $(OBJDIR)/, $(notdir $(LIBSHM_SOURCES:.c=.o)))
+LIBSHM_DEPENDS = $(LIBSHM_OBJECTS:.o=.d)
+
+TEST_LIBSHM_TARGET = $(TESTDIR)/test_libshm
+TEST_LIBSHM_SOURCES = $(filter $(SRCDIR)/test_libshm%.c, $(wildcard $(SRCDIR)/*.c))
+TEST_LIBSHM_OBJECTS = $(addprefix $(OBJDIR)/, $(notdir $(TEST_LIBSHM_SOURCES:.c=.o)))
+TEST_LIBSHM_DEPENDS = $(TEST_LIBSHM_OBJECTS:.o=.d)
+
+
+#
+# libtcpserv
+# 	Easy-to-use TCP server/client module
+#
+LIBTCPSERV_TARGET_STATIC = $(LIBDIR)/libtcpserv.a
+LIBTCPSERV = $(LIBTCPSERV_TARGET_STATIC)
+LIBTCPSERV_SOURCES = $(filter $(SRCDIR)/libtcpserv%.c, $(wildcard $(SRCDIR)/*.c))
+LIBTCPSERV_OBJECTS = $(addprefix $(OBJDIR)/, $(notdir $(LIBTCPSERV_SOURCES:.c=.o)))
+LIBTCPSERV_DEPENDS = $(LIBTCPSERV_OBJECTS:.o=.d)
+
+TEST_LIBTCPSERV_TARGET = $(TESTDIR)/test_libtcpserv
+TEST_LIBTCPSERV_SOURCES = $(filter $(SRCDIR)/test_libtcpserv%.c, $(wildcard $(SRCDIR)/*.c))
+TEST_LIBTCPSERV_OBJECTS = $(addprefix $(OBJDIR)/, $(notdir $(TEST_LIBTCPSERV_SOURCES:.c=.o)))
+TEST_LIBTCPSERV_DEPENDS = $(TEST_LIBTCPSERV_OBJECTS:.o=.d)
+
+TEST_LIBTCPCLIENT_TARGET = $(TESTDIR)/test_libtcpclient
+TEST_LIBTCPCLIENT_SOURCES = $(filter $(SRCDIR)/test_libtcpclient%.c, $(wildcard $(SRCDIR)/*.c))
+TEST_LIBTCPCLIENT_OBJECTS = $(addprefix $(OBJDIR)/, $(notdir $(TEST_LIBTCPCLIENT_SOURCES:.c=.o)))
+TEST_LIBTCPCLIENT_DEPENDS = $(TEST_LIBTCPCLIENT_OBJECTS:.o=.d)
+
+
+#
+# libudpserv
+# 	Easy-to-use UDP server/client module
+#
+LIBUDPSERV_TARGET_STATIC = $(LIBDIR)/libudpserv.a
+LIBUDPSERV = $(LIBUDPSERV_TARGET_STATIC)
+LIBUDPSERV_SOURCES = $(filter $(SRCDIR)/libudpserv%.c, $(wildcard $(SRCDIR)/*.c))
+LIBUDPSERV_OBJECTS = $(addprefix $(OBJDIR)/, $(notdir $(LIBUDPSERV_SOURCES:.c=.o)))
+LIBUDPSERV_DEPENDS = $(LIBUDPSERV_OBJECTS:.o=.d)
+
+TEST_LIBUDPSERV_TARGET = $(TESTDIR)/test_libudpserv
+TEST_LIBUDPSERV_SOURCES = $(filter $(SRCDIR)/test_libudpserv%.c, $(wildcard $(SRCDIR)/*.c))
+TEST_LIBUDPSERV_OBJECTS = $(addprefix $(OBJDIR)/, $(notdir $(TEST_LIBUDPSERV_SOURCES:.c=.o)))
+TEST_LIBUDPSERV_DEPENDS = $(TEST_LIBUDPSERV_OBJECTS:.o=.d)
+
+TEST_LIBUDPCLIENT_TARGET = $(TESTDIR)/test_libudpclient
+TEST_LIBUDPCLIENT_SOURCES = $(filter $(SRCDIR)/test_libudpclient%.c, $(wildcard $(SRCDIR)/*.c))
+TEST_LIBUDPCLIENT_OBJECTS = $(addprefix $(OBJDIR)/, $(notdir $(TEST_LIBUDPCLIENT_SOURCES:.c=.o)))
+TEST_LIBUDPCLIENT_DEPENDS = $(TEST_LIBUDPCLIENT_OBJECTS:.o=.d)
+
+
+#
+# libunserv
+# 	Easy-to-use unix domain socket server/client module
+#
+LIBUNSERV_TARGET_STATIC = $(LIBDIR)/libunserv.a
+LIBUNSERV = $(LIBUNSERV_TARGET_STATIC)
+LIBUNSERV_SOURCES = $(filter $(SRCDIR)/libunserv%.c, $(wildcard $(SRCDIR)/*.c))
+LIBUNSERV_OBJECTS = $(addprefix $(OBJDIR)/, $(notdir $(LIBUNSERV_SOURCES:.c=.o)))
+LIBUNSERV_DEPENDS = $(LIBUNSERV_OBJECTS:.o=.d)
+
+TEST_LIBUNSERV_TARGET = $(TESTDIR)/test_libunserv
+TEST_LIBUNSERV_SOURCES = $(filter $(SRCDIR)/test_libunserv%.c, $(wildcard $(SRCDIR)/*.c)) \
+						 $(COMMON_SOURCES)
+TEST_LIBUNSERV_OBJECTS = $(TEST_LIBUNSERV_SOURCES:.c=.o)
+TEST_LIBUNSERV_DEPENDS = $(TEST_LIBUNSERV_OBJECTS:.o=.d)
+
+TEST_LIBUNCLIENT_TARGET = $(TESTDIR)/test_libunclient
+TEST_LIBUNCLIENT_SOURCES = $(filter $(SRCDIR)/test_libunclient%.c, $(wildcard $(SRCDIR)/*.c)) \
+						   $(COMMON_SOURCES)
+TEST_LIBUNCLIENT_OBJECTS = $(TEST_LIBUNCLIENT_SOURCES:.c=.o)
+TEST_LIBUNCLIENT_DEPENDS = $(TEST_LIBUNCLIENT_OBJECTS:.o=.d)
+
+#
+# libsock
+# 	Easy-to-use socket API wrapper module (Beta)
+#
+# LIBSOCK_TARGET_STATIC = $(LIBDIR)/libsock.a
+# LIBSOCK = $(LIBSOCK_TARGET_STATIC)
+# LIBSOCK_SOURCES = $(filter $(SRCDIR)/libsock%.c, $(wildcard $(SRCDIR)/*.c))
+# LIBSOCK_OBJECTS = $(addprefix $(OBJDIR)/, $(notdir $(LIBSOCK_SOURCES:.c=.o)))
+# LIBSOCK_DEPENDS = $(LIBSOCK_OBJECTS:.o=.d)
+#
+# TEST_LIBSOCK_TARGET = $(TESTDIR)/test_libsock
+# TEST_LIBSOCK_SOURCES = $(filter $(SRCDIR)/test_libsock%.c, $(wildcard $(SRCDIR)/*.c))
+# TEST_LIBSOCK_OBJECTS = $(addprefix $(OBJDIR)/, $(notdir $(TEST_LIBSOCK_SOURCES:.c=.o)))
+# TEST_LIBSOCK_DEPENDS = $(TEST_LIBSOCK_OBJECTS:.o=.d)
+
+#
+# libtuntap
+# 	Modern TUN/TAP wrapper module with compatibility of Linux 2.6 ~ 4.4.
+#
+LIBTUNTAP_TARGET_STATIC = $(LIBDIR)/libtuntap.a
+LIBTUNTAP = $(LIBTUNTAP_TARGET_STATIC)
+LIBTUNTAP_SOURCES = $(filter $(SRCDIR)/libtuntap%.c, $(wildcard $(SRCDIR)/*.c))
+LIBTUNTAP_OBJECTS = $(addprefix $(OBJDIR)/, $(notdir $(LIBTUNTAP_SOURCES:.c=.o)))
+LIBTUNTAP_DEPENDS = $(LIBTUNTAP_OBJECTS:.o=.d)
+
+TEST_LIBTUNTAP_TARGET = $(TESTDIR)/test_libtuntap
+TEST_LIBTUNTAP_SOURCES = $(filter $(SRCDIR)/test_libtuntap%.c, $(wildcard $(SRCDIR)/*.c))
+TEST_LIBTUNTAP_OBJECTS = $(addprefix $(OBJDIR)/, $(notdir $(TEST_LIBTUNTAP_SOURCES:.c=.o)))
+TEST_LIBTUNTAP_DEPENDS = $(TEST_LIBTUNTAP_OBJECTS:.o=.d)
+
+#
+# libudevmon
+# 	Simple Userpspace /dev (udev) utility module
+#
+LIBUDEVMON_TARGET_STATIC = $(LIBDIR)/libudevmon.a
+LIBUDEVMON = $(LIBUDEVMON_TARGET_STATIC)
+LIBUDEVMON_SOURCES = $(filter $(SRCDIR)/libudevmon%.c, $(wildcard $(SRCDIR)/*.c))
+LIBUDEVMON_OBJECTS = $(addprefix $(OBJDIR)/, $(notdir $(LIBUDEVMON_SOURCES:.c=.o)))
+LIBUDEVMON_DEPENDS = $(LIBUDEVMON_OBJECTS:.o=.d)
+
+TEST_LIBUDEVMON_TARGET = $(TESTDIR)/test_libudevmon
+TEST_LIBUDEVMON_SOURCES = $(filter $(SRCDIR)/test_libudevmon%.c, $(wildcard $(SRCDIR)/*.c))
+TEST_LIBUDEVMON_OBJECTS = $(addprefix $(OBJDIR)/, $(notdir $(TEST_LIBUDEVMON_SOURCES:.c=.o)))
+TEST_LIBUDEVMON_DEPENDS = $(TEST_LIBUDEVMON_OBJECTS:.o=.d)
+
+#
+# libwinetap
+# 	A set of helper functions which provide a connection with the daemon and
+# 	a message coding for external network simulators. If you need more information,
+# 	see wtap80211d/src/libwinetap/README.md.
+LIBWINETAP_TARGET_STATIC = $(LIBDIR)/libwinetap.a
+LIBWINETAP = $(LIBWINETAP_TARGET_STATIC)
+LIBWINETAP_SOURCES = $(filter $(SRCDIR)/libwinetap%.c, $(wildcard $(SRCDIR)/*.c)) $(COMMON_SOURCES)
+LIBWINETAP_OBJECTS = $(LIBWINETAP_SOURCES:.c=.o)
+LIBWINETAP_DEPENDS = $(LIBWINETAP_OBJECTS:.o=.d)
+
+TEST_LIBWINETAP_TARGET = $(TESTDIR)/test_libwinetap
+TEST_LIBWINETAP_SOURCES = $(filter $(SRCDIR)/test_libwinetap%.c, $(wildcard $(SRCDIR)/*.c)) \
+						  $(COMMON_SOURCES)
+TEST_LIBWINETAP_OBJECTS = $(TEST_LIBWINETAP_SOURCES:.c=.o)
+TEST_LIBWINETAP_DEPENDS = $(TEST_LIBWINETAP_OBJECTS:.o=.d)
+
+#
+# wtap80211 daemon dependencies
+# 	wtap80211 daemon process (wtap80211d)
+DAEMON_TARGET = wtap80211d
+DAEMON_SOURCES = $(filter-out $(SRCDIR)/lib%.c $(SRCDIR)/test%.c, $(wildcard $(SRCDIR)/*.c)) \
+				 $(COMMON_SOURCES)
+DAEMON_OBJECTS = $(DAEMON_SOURCES:.c=.o)
+DAEMON_DEPENDS = $(DAEMON_OBJECTS:.o=.d)
+
+
+#
+# Build Rules
+#
+$(DAEMON_TARGET): $(DAEMON_OBJECTS) $(LIBS)
+
+$(DAEMON_TARGET):
+	$(CC) -o $@ $(STARTFILES) $^ $(LIBGROUP) $(ENDFILES) $(LDFLAGS)
+
+
+$(LIBMEMCPY_TARGET_DYNAMIC): $(LIBMEMCPY_OBJECTS)
+$(LIBWORKQUEUE_TARGET_DYNAMIC): $(LIBWORKQUEUE_OBJECTS)
+
+$(LIBMEMCPY_TARGET_DYNAMIC) $(LIBWORKQUEUE_TARGET_DYNAMIC):
+	$(CC) -shared -Wl,--no-as-needed -o $@ $^ $(LDFLAGS)
+
+
+# Class 0 libraries (they are indepenedent of any other libraries except for the system libraries.)
+CLASS_0_LIBRARIES = $(LIBWORKQUEUE) $(LIBUTILS)
+CLASS_0_LIBRARIES_OBJECTS = $(LIBMEMCPY_OBJECTS) $(LIBUTILS_OBJECTS) $(LIBWORKQUEUE_OBJECTS)
+$(LIBMEMCPY_TARGET_STATIC): $(LIBMEMCPY_OBJECTS)
+$(LIBUTILS_TARGET_STATIC): $(LIBUTILS_OBJECTS)
+$(LIBWORKQUEUE_TARGET_STATIC): $(LIBWORKQUEUE_OBJECTS)
+
+# Class 1 libraries (they depend on class 0 libraries and thirdpatry's libraries)
+CLASS_1_LIBRARIES = $(CLASS_0_LIBRARIES) \
+	$(LIBSHM) $(LIBTCPSERV) $(LIBUDPSERV) $(LIBUNSERV) $(LIBTUNTAP) $(LIBUDEVMON)
+CLASS_1_LIBRARIES_OBJECTS = $(CLASS_0_LIBRARIES_OBJECTS) \
+	$(LIBSHM_OBJECTS) $(LIBTCPSERV_OBJECTS) $(LIBUDPSERV_OBJECTS) \
+	$(LIBUNSERV_OBJECTS) $(LIBTUNTAP_OBJECTS) $(LIBUDEVMON_OBJECTS)
+$(LIBSHM_TARGET_STATIC): $(LIBSHM_OBJECTS) $(CLASS_0_LIBRARIES_OBJECTS)
+$(LIBTCPSERV_TARGET_STATIC): $(LIBTCPSERV_OBJECTS) $(CLASS_0_LIBRARIES_OBJECTS)
+$(LIBUDPSERV_TARGET_STATIC): $(LIBUDPSERV_OBJECTS) $(CLASS_0_LIBRARIES_OBJECTS)
+$(LIBUNSERV_TARGET_STATIC): $(LIBUNSERV_OBJECTS) $(CLASS_0_LIBRARIES_OBJECTS)
+$(LIBTUNTAP_TARGET_STATIC): $(LIBTUNTAP_OBJECTS) $(CLASS_0_LIBRARIES_OBJECTS)
+$(LIBUDEVMON_TARGET_STATIC): $(LIBUDEVMON_OBJECTS) $(CLASS_0_LIBRARIES_OBJECTS)
+
+# Class 2 libraries (they depend on class 0 and 1 libraries and thirdparty's libraries.)
+CLASS_2_LIBRARIES = $(CLASS_1_LIBRARIES) \
+	$(LIBWINETAP)
+CLASS_2_LIBRARIES_OBJECTS = $(CLASS_0_LIBRARIES_OBJECTS) $(CLASS_1_LIBRARIES_OBJECTS) \
+	$(LIBWINETAP_OBJECTS)
+$(LIBWINETAP_TARGET_STATIC): $(LIBWINETAP_OBJECTS) $(CLASS_1_LIBRARIES_OBJECTS)
+
+$(LIBMEMCPY_TARGET_STATIC) $(LIBUTILS_TARGET_STATIC) \
+$(LIBWORKQUEUE_TARGET_STATIC) $(LIBSHM_TARGET_STATIC) \
+$(LIBTCPSERV_TARGET_STATIC) $(LIBUDPSERV_TARGET_STATIC) $(LIBUNSERV_TARGET_STATIC) \
+$(LIBTUNTAP_TARGET_STATIC) $(LIBUDEVMON_TARGET_STATIC):
+	$(AR) $(AFLAGS) $@ $^
+
+# Combine all static libraries that depend on libwinetap because
+# if will be linked to other execuatable binary independently.
+$(LIBWINETAP_TARGET_STATIC): $(LIBEVENT_LIB)
+	bash $(SCRIPT_DIR)/generate_mri.sh ./ $@ $^
+	$(AR) -M < $(@:.a=.mri)
+
+# $(TEST_LIBSOCK_TARGET): $(TEST_LIBSOCK_OBJECTS) $(LIBS)
+$(TEST_LIBWORKQUEUE_TARGET): $(TEST_LIBWORKQUEUE_OBJECTS) $(LIBS)
+$(TEST_LIBUTILS_TARGET): $(TEST_LIBUTILS_OBJECTS) $(LIBS)
+$(TEST_QUEUE_TARGET): $(TEST_QUEUE_OBJECTS) $(LIBS)
+$(TEST_LIBSHM_TARGET): $(TEST_LIBSHM_OBJECTS) $(LIBS)
+$(TEST_LIBTUNTAP_TARGET): $(TEST_LIBTUNTAP_OBJECTS) $(LIBS)
+$(TEST_LIBTCPSERV_TARGET): $(TEST_LIBTCPSERV_OBJECTS) $(LIBS)
+$(TEST_LIBTCPCLIENT_TARGET): $(TEST_LIBTCPCLIENT_OBJECTS) $(LIBS)
+$(TEST_LIBUDPSERV_TARGET): $(TEST_LIBUDPSERV_OBJECTS) $(LIBS)
+$(TEST_LIBUDPCLIENT_TARGET): $(TEST_LIBUDPCLIENT_OBJECTS) $(LIBS)
+$(TEST_LIBUNSERV_TARGET): $(TEST_LIBUNSERV_OBJECTS) $(LIBS)
+$(TEST_LIBUNCLIENT_TARGET): $(TEST_LIBUNCLIENT_OBJECTS) $(LIBS)
+$(TEST_LIBUDEVMON_TARGET): $(TEST_LIBUDEVMON_OBJECTS) $(LIBS)
+$(TEST_LIBWINETAP_TARGET): $(TEST_LIBWINETAP_OBJECTS) $(LIBS)
+
+$(TEST_LIBSHM_TARGET) $(TEST_LIBUTILS_TARGET) $(TEST_QUEUE_TARGET) $(TEST_LIBWORKQUEUE_TARGET) \
+$(TEST_LIBTUNTAP_TARGET) \
+$(TEST_LIBTCPSERV_TARGET) $(TEST_LIBTCPCLIENT_TARGET) \
+$(TEST_LIBUDPSERV_TARGET) $(TEST_LIBUDPCLIENT_TARGET) \
+$(TEST_LIBUNSERV_TARGET) $(TEST_LIBUNCLIENT_TARGET) \
+$(TEST_LIBUDEVMON_TARGET) \
+$(TEST_LIBWINETAP_TARGET) :
+	$(CC) -o $@ $(STARTFILES) $^ $(LIBGROUP) $(ENDFILES) $(LDFLAGS)
+
+all: \
+	compiledb lib test \
+	$(DAEMON_TARGET)
+
+lib: \
+	$(LIBMEMCPY_TARGET_STATIC) $(LIBMEMCPY_TARGET_DYNAMIC) \
+	$(LIBWORKQUEUE_TARGET_STATIC) $(LIBWORKQUEUE_TARGET_DYNAMIC) \
+	$(LIBUTILS_TARGET_STATIC) \
+	$(LIBSHM_TARGET_STATIC) \
+	$(LIBTUNTAP_TARGET_STATIC) \
+	$(LIBUDEVMON_TARGET_STATIC) \
+	$(LIBTCPSERV_TARGET_STATIC) \
+	$(LIBUDPSERV_TARGET_STATIC) \
+	$(LIBUNSERV_TARGET_STATIC) \
+	$(LIBWINETAP_TARGET_STATIC) \
+
+test: \
+	lib \
+	$(TEST_LIBWORKQUEUE_TARGET) \
+	$(TEST_LIBUTILS_TARGET) \
+	$(TEST_LIBSHM_TARGET) \
+	$(TEST_LIBTCPSERV_TARGET) \
+	$(TEST_LIBTCPCLIENT_TARGET) \
+	$(TEST_LIBUDPSERV_TARGET) \
+	$(TEST_LIBUDPCLIENT_TARGET) \
+	$(TEST_LIBUNSERV_TARGET) \
+	$(TEST_LIBUNCLIENT_TARGET) \
+	$(TEST_LIBTUNTAP_TARGET) \
+	$(TEST_LIBUDEVMON_TARGET) \
+	$(TEST_LIBWINETAP_TARGET)
+#	$(TEST_QUEUE_TARGET)
+
+module:
+	$(call build_module)
+
+compiledb:
+	$(shell compiledb -n make)
+
+clean:
+	$(call clean_module)
+	-rm -f $(SRCDIR)/*.d $(SRCDIR)/*.o $(SRCDIR)/*.su \
+		$(SRCDIR)/common/*.d $(SRCDIR)/common/*.o $(SRCDIR)/common/*.su \
+		$(TESTDIR)/* $(LIBDIR)/* $(DAEMON_TARGET)
+
+TEST_SOURCES=$(call get_source_files,libmemcpy)
+TEST_OBJECTS=$(call get_object_files,$(TEST_SOURCES))
+
+.PHONY: check
+check:
+	@echo $(ARCH)
+	@echo $(INCLUDE)
+
+DEPENDS=$(wildcard $(SRCDIR)/*.d)
+-include $(DEPENDS)
